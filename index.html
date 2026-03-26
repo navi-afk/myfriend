@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title id="page-title">My AI Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f0f;--sf:#1a1a1a;--sf2:#222;--bd:#2e2e2e;--ac:#7c6af7;--ac2:#a89ef8;--tx:#e8e8e8;--tx2:#888;--tx3:#444;--ub:#2a2560;--ab:#1e1e1e;--dg:#e05252;--sg:#52b788;--font:'Noto Sans JP',sans-serif;--mono:'Space Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--font);font-size:15px;}
+#app{display:flex;flex-direction:column;height:100dvh;}
+#topbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bd);background:var(--bg);flex-shrink:0;}
+#app-title{font-family:var(--mono);font-size:13px;color:var(--ac2);letter-spacing:.04em;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ib{width:34px;height:34px;border-radius:10px;border:1px solid var(--bd);background:var(--sf);color:var(--tx2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:background .15s;}
+.ib:active{background:var(--sf2);color:var(--tx);}
+#api-banner{margin:8px 14px;padding:9px 12px;background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);border-radius:10px;font-size:12px;color:#f08080;display:none;align-items:center;gap:8px;}
+#api-banner span{flex:1;}
+#api-banner a{color:#f08080;}
+#api-banner button{background:none;border:none;color:#f08080;cursor:pointer;font-size:18px;line-height:1;}
+#char-strip{display:flex;gap:8px;padding:8px 14px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--bd);scrollbar-width:none;}
+#char-strip::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;display:flex;align-items:center;gap:7px;padding:5px 12px 5px 6px;border-radius:20px;border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.chip.active{border-color:var(--ac);background:rgba(124,106,247,.15);color:var(--ac2);}
+.chipav{width:24px;height:24px;border-radius:50%;overflow:hidden;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.chipav img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+#messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
+.msg{display:flex;gap:8px;max-width:88%;animation:fu .2s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.msg.ai{align-self:flex-start;}
+.av{width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;border:1px solid var(--bd);}
+.av img{width:100%;height:100%;object-fit:cover;}
+.avfb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(124,106,247,.2);}
+.avfb.u{background:rgba(82,183,136,.2);font-size:11px;font-family:var(--mono);color:var(--sg);}
+.bub{padding:9px 13px;border-radius:13px;font-size:14px;line-height:1.65;border:1px solid transparent;word-break:break-word;white-space:pre-wrap;}
+.msg.user .bub{background:var(--ub);border-color:rgba(124,106,247,.3);border-bottom-right-radius:3px;}
+.msg.ai .bub{background:var(--ab);border-color:var(--bd);border-bottom-left-radius:3px;}
+.typing{display:flex;gap:5px;padding:4px 0;}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--tx3);animation:bl 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:.2s;}
+.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes bl{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--tx3);font-size:13px;text-align:center;padding:32px;}
+.empty .big{font-size:40px;}
+.empty strong{color:var(--tx2);font-weight:500;}
+.abadge-wrap{text-align:center;}
+.abadge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.3);border-radius:20px;font-size:12px;color:var(--ac2);cursor:pointer;margin:2px 0;}
+#inputbar{display:flex;align-items:flex-end;gap:8px;padding:8px 12px 10px;border-top:1px solid var(--bd);background:var(--bg);flex-shrink:0;}
+#input-ta{flex:1;background:var(--sf);border:1px solid var(--bd);border-radius:12px;color:var(--tx);font-family:var(--font);font-size:14px;padding:9px 13px;resize:none;outline:none;max-height:120px;line-height:1.5;transition:border-color .15s;}
+#input-ta:focus{border-color:var(--ac);}
+#input-ta::placeholder{color:var(--tx3);}
+#send-btn{width:40px;height:40px;border-radius:12px;border:none;background:var(--ac);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .1s;}
+#send-btn:active{transform:scale(.93);background:#6459d9;}
+#send-btn:disabled{background:var(--sf2);cursor:default;}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.ov.open{display:flex;}
+.sheet{width:100%;max-width:600px;max-height:90dvh;background:var(--sf);border-radius:20px 20px 0 0;border:1px solid var(--bd);border-bottom:none;overflow-y:auto;animation:su .22s ease;}
+@keyframes su{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.sh{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--sf);z-index:1;}
+.sh h2{font-size:15px;font-weight:500;}
+.shc{background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer;line-height:1;}
+.sb{padding:18px;display:flex;flex-direction:column;gap:14px;}
+.lbl{font-size:11px;color:var(--tx2);letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:5px;}
+input[type=text],input[type=password],select.sel,textarea.ta{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-family:var(--font);font-size:14px;padding:9px 13px;outline:none;transition:border-color .15s;}
+input[type=text]:focus,input[type=password]:focus,select.sel:focus,textarea.ta:focus{border-color:var(--ac);}
+select.sel{cursor:pointer;}
+textarea.ta{resize:vertical;min-height:96px;line-height:1.6;}
+.br{display:flex;gap:10px;}
+.btn{flex:1;padding:11px;border-radius:12px;border:none;font-size:14px;font-family:var(--font);cursor:pointer;transition:opacity .15s;}
+.btn:active{opacity:.8;}
+.bp{background:var(--ac);color:#fff;}
+.bg{background:var(--sf2);color:var(--tx2);}
+.bd2{background:rgba(224,82,82,.12);color:var(--dg);border:1px solid rgba(224,82,82,.3);}
+.stit{font-size:12px;color:var(--tx2);font-weight:500;padding-bottom:6px;border-bottom:1px solid var(--bd);}
+.avpicker{display:flex;align-items:center;gap:14px;}
+.avprev{width:56px;height:56px;border-radius:50%;overflow:hidden;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sf2);flex-shrink:0;}
+.avprev img{width:100%;height:100%;object-fit:cover;}
+.avbtn{padding:8px 14px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);font-size:13px;cursor:pointer;}
+.cli{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);}
+.cli:last-child{border-bottom:none;}
+.cliav{width:42px;height:42px;border-radius:50%;overflow:hidden;border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sf2);flex-shrink:0;}
+.cliav img{width:100%;height:100%;object-fit:cover;}
+.cliinfo{flex:1;min-width:0;}
+.cliinfo strong{font-size:14px;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cliinfo span{font-size:11px;color:var(--tx2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.smb{padding:5px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx2);font-size:12px;cursor:pointer;white-space:nowrap;}
+.tonelist{display:flex;flex-direction:column;gap:6px;}
+.tonerow{display:flex;align-items:center;gap:8px;}
+.tonerow input{flex:1;}
+.tonedel{width:28px;height:28px;border-radius:8px;background:none;border:1px solid rgba(224,82,82,.3);color:var(--dg);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toneadd{padding:8px;border-radius:9px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);font-size:13px;cursor:pointer;text-align:center;width:100%;}
+.chkrow{display:flex;align-items:center;gap:10px;padding:6px 0;}
+.chkrow input[type=checkbox]{width:18px;height:18px;accent-color:var(--ac);cursor:pointer;}
+.chkrow label{font-size:13px;color:var(--tx);cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <span id="app-title">MY AI CHAT</span>
+    <button class="ib" onclick="openSettings()" title="設定">⚙</button>
+    <button class="ib" onclick="clearChat()" title="会話クリア">🗑</button>
+    <button class="ib" onclick="openChars()" title="キャラクター管理">🎭</button>
+  </div>
+  <div id="api-banner"><span>⚠ APIキーが未設定です。<a href="#" onclick="openSettings();return false;">設定</a>から入力。</span><button onclick="this.parentElement.style.display='none'">×</button></div>
+  <div id="char-strip"></div>
+  <div id="messages">
+    <div class="empty" id="empty-state"><div class="big">💬</div><strong>会話を始めよう</strong><div>下に入力してください</div></div>
+  </div>
+  <div id="inputbar">
+    <textarea id="input-ta" rows="1" placeholder="メッセージを入力…" oninput="autoResize(this)" onkeydown="hkey(event)"></textarea>
+    <button id="send-btn" onclick="sendMsg()">↑</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="ov" id="ov-settings" onclick="ovc(event,'ov-settings')">
+<div class="sheet">
+  <div class="sh"><h2>⚙ 設定</h2><button class="shc" onclick="cls('ov-settings')">×</button></div>
+  <div class="sb">
+    <div class="stit">アプリ</div>
+    <div><label class="lbl">アプリ名</label><input type="text" id="s-name" placeholder="MY AI CHAT"/></div>
+    <div class="stit">AI接続</div>
+    <div><label class="lbl">使用するAI</label>
+    <select class="sel" id="s-prov" onchange="updProv()">
+      <option value="gemini">Google Gemini（無料枠あり・推奨）</option>
+      <option value="anthropic">Anthropic Claude（有料）</option>
+    </select></div>
+    <div id="gemini-wrap"><label class="lbl">Gemini APIキー</label><input type="password" id="s-gkey" placeholder="AIza..."/><div style="font-size:11px;color:var(--tx3);margin-top:4px;"><a href="https://aistudio.google.com/app/apikey" style="color:var(--ac2);" target="_blank">Google AI Studioで無料取得 →</a></div></div>
+    <div id="anthropic-wrap" style="display:none;"><label class="lbl">Anthropic APIキー</label><input type="password" id="s-akey" placeholder="sk-ant-..."/><div style="font-size:11px;color:var(--tx3);margin-top:4px;"><a href="https://console.anthropic.com/" style="color:var(--ac2);" target="_blank">Anthropicで取得 →</a></div></div>
+    <div class="stit">共通ユーザープロフィール</div>
+    <div style="font-size:12px;color:var(--tx2);">全キャラとの会話でAIに伝える自己紹介（キャラ個別設定で上書き可）</div>
+    <div><label class="lbl">名前・呼び方</label><input type="text" id="s-uname" placeholder="例: たくみ、22歳の学生"/></div>
+    <div><label class="lbl">プロフィール</label><textarea class="ta" id="s-ubio" rows="3" placeholder="例: アニメと音楽が好き、内向的な性格、東京在住"></textarea></div>
+    <div class="br"><button class="btn bp" onclick="saveSettings()">保存</button><button class="btn bg" onclick="cls('ov-settings')">キャンセル</button></div>
+  </div>
+</div>
+</div>
+
+<!-- CHAR MANAGER -->
+<div class="ov" id="ov-chars" onclick="ovc(event,'ov-chars')">
+<div class="sheet">
+  <div class="sh"><h2>🎭 キャラクター</h2><button class="shc" onclick="cls('ov-chars')">×</button></div>
+  <div class="sb">
+    <div id="char-list"></div>
+    <button class="btn bp" onclick="showEditor(null)">＋ 新しいキャラクターを追加</button>
+  </div>
+</div>
+</div>
+
+<!-- CHAR EDITOR -->
+<div class="ov" id="ov-edit" onclick="ovc(event,'ov-edit')">
+<div class="sheet">
+  <div class="sh"><h2 id="et">キャラクターを追加</h2><button class="shc" onclick="cls('ov-edit')">×</button></div>
+  <div class="sb">
+    <div class="stit">アイコン</div>
+    <div class="avpicker">
+      <div class="avprev" id="avprev">🤖</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="avbtn" onclick="document.getElementById('avfile').click()">📁 画像を選択（JPG/PNG）</button>
+        <input type="file" id="avfile" accept="image/*" style="display:none;" onchange="onAvFile(event)"/>
+        <button class="avbtn" onclick="clearAvImg()" style="font-size:12px;">✕ 画像を削除して絵文字に戻す</button>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:2px;">
+          <input type="text" id="ce-emoji" placeholder="絵文字" maxlength="2" style="width:72px;" oninput="onEmojiInput()"/>
+          <span style="font-size:12px;color:var(--tx2);">または絵文字を入力</span>
+        </div>
+      </div>
+    </div>
+    <div><label class="lbl">キャラクター名</label><input type="text" id="ce-name" placeholder="例: りん、先生、相棒"/></div>
+    <div class="stit">このキャラ専用ユーザー設定（任意）</div>
+    <div style="font-size:12px;color:var(--tx2);">空白なら共通設定を使用</div>
+    <div><label class="lbl">このトークでの自分の名前・設定</label><input type="text" id="ce-uov" placeholder="例: このトークでは「王様」として話す"/></div>
+    <div class="stit">システムプロンプト</div>
+    <div><label class="lbl">AIへの指示（性格・役割）</label><textarea class="ta" id="ce-prompt" rows="5" placeholder="例: あなたは「りん」という名の親友です。関西弁でフレンドリーに話してください。"></textarea></div>
+    <div class="stit">口調の例</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:6px;">AIがこの口調を参考にして話します</div>
+    <div class="tonelist" id="tone-list"></div>
+    <button class="toneadd" onclick="addTone()">＋ 口調例を追加</button>
+    <div class="stit">会話解析</div>
+    <div class="chkrow"><input type="checkbox" id="ce-analysis"/><label for="ce-analysis">会話のズレを自動検出してバッジ表示（6ターンごと）</label></div>
+    <input type="hidden" id="ce-id"/>
+    <input type="hidden" id="ce-avdata"/>
+    <div class="br"><button class="btn bp" onclick="saveChar()">保存</button><button class="btn bg" onclick="cls('ov-edit')">キャンセル</button></div>
+    <button class="btn bd2" id="ce-del" onclick="deleteChar()" style="display:none;">このキャラクターを削除</button>
+  </div>
+</div>
+</div>
+
+<!-- ANALYSIS -->
+<div class="ov" id="ov-analysis" onclick="ovc(event,'ov-analysis')">
+<div class="sheet">
+  <div class="sh"><h2>🔍 会話解析</h2><button class="shc" onclick="cls('ov-analysis')">×</button></div>
+  <div class="sb" id="analysis-body"></div>
+</div>
+</div>
+
+<script>
+const DEFAULTS=[
+  {id:'default',name:'AI助手',emoji:'🤖',avatarData:'',prompt:'あなたは親切で知的なAIアシスタントです。日本語で自然に会話してください。',tones:[],analysis:false,userOverride:''},
+  {id:'friend',name:'ともだち',emoji:'😊',avatarData:'',prompt:'あなたはユーザーの気さくな友人です。タメ口でフレンドリーに、時にユーモアを交えながら話してください。',tones:['そっか〜、それはきついね','マジで！？それすごくない？'],analysis:false,userOverride:''},
+];
+let S={appName:'MY AI CHAT',provider:'gemini',geminiKey:'',anthropicKey:'',userName:'',userBio:'',chars:JSON.parse(JSON.stringify(DEFAULTS)),activeCharId:'default',history:[]};
+
+function save(){try{localStorage.setItem('myaic3',JSON.stringify(S));}catch(e){}}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('myaic3')||'{}');
+    ['appName','provider','geminiKey','anthropicKey','userName','userBio','activeCharId'].forEach(k=>{if(d[k]!==undefined)S[k]=d[k];});
+    if(d.chars&&d.chars.length)S.chars=d.chars;
+    if(d.history)S.history=d.history;
+  }catch(e){}
+}
+function gc(){return S.chars.find(c=>c.id===S.activeCharId)||S.chars[0];}
+function akey(){return S.provider==='gemini'?S.geminiKey:S.anthropicKey;}
+
+function init(){load();applyName();renderStrip();renderHistory();checkBanner();}
+function applyName(){const n=S.appName||'MY AI CHAT';document.getElementById('app-title').textContent=n;document.getElementById('page-title').textContent=n;}
+function checkBanner(){document.getElementById('api-banner').style.display=akey()?'none':'flex';}
+
+function renderStrip(){
+  const s=document.getElementById('char-strip');s.innerHTML='';
+  S.chars.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='chip'+(c.id===S.activeCharId?' active':'');
+    const avhtml=c.avatarData?`<div class="chipav"><img src="${c.avatarData}"></div>`:`<div class="chipav"><span style="font-size:14px;">${c.emoji||'🤖'}</span></div>`;
+    el.innerHTML=avhtml+c.name;
+    el.onclick=()=>{S.activeCharId=c.id;save();renderStrip();};
+    s.appendChild(el);
+  });
+}
+
+function avNode(char,size){
+  const d=document.createElement('div');d.className='av';
+  if(char.avatarData){d.innerHTML=`<img src="${char.avatarData}">`;}
+  else{const f=document.createElement('div');f.className='avfb';f.textContent=char.emoji||'🤖';d.appendChild(f);}
+  return d;
+}
+
+function renderHistory(){
+  document.getElementById('messages').querySelectorAll('.msg,.abadge-wrap').forEach(el=>el.remove());
+  document.getElementById('empty-state').style.display=S.history.length?'none':'flex';
+  S.history.forEach(m=>addBubble(m.role,m.content,true));
+}
+
+function addBubble(role,text,skip){
+  const box=document.getElementById('messages');
+  document.getElementById('empty-state').style.display='none';
+  const char=gc();
+  const div=document.createElement('div');div.className='msg '+(role==='user'?'user':'ai');
+  let avEl;
+  if(role==='user'){avEl=document.createElement('div');avEl.className='av';const f=document.createElement('div');f.className='avfb u';f.textContent='ME';avEl.appendChild(f);}
+  else{avEl=avNode(char,34);}
+  const bub=document.createElement('div');bub.className='bub';bub.textContent=text;
+  div.appendChild(avEl);div.appendChild(bub);
+  box.appendChild(div);
+  if(!skip)box.scrollTop=box.scrollHeight;
+  return div;
+}
+
+function showTyping(){
+  const box=document.getElementById('messages');const char=gc();
+  const div=document.createElement('div');div.className='msg ai';div.id='typ';
+  const avEl=avNode(char,34);
+  const bub=document.createElement('div');bub.className='bub';bub.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  div.appendChild(avEl);div.appendChild(bub);box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+function remTyping(){const el=document.getElementById('typ');if(el)el.remove();}
+
+function buildSys(){
+  const c=gc();
+  const uname=c.userOverride||S.userName;
+  const ubio=S.userBio;
+  let sys=c.prompt||'';
+  if(uname||ubio){sys+='\n\n【ユーザー情報】\n';if(uname)sys+='名前/設定: '+uname+'\n';if(ubio)sys+='プロフィール: '+ubio+'\n';}
+  if(c.tones&&c.tones.length){sys+='\n\n【口調の例（この話し方を参考に】\n';c.tones.forEach(t=>{if(t.trim())sys+='・'+t+'\n';});}
+  return sys;
+}
+
+async function sendMsg(){
+  const ta=document.getElementById('input-ta');
+  const text=ta.value.trim();if(!text)return;
+  if(!akey()){openSettings();return;}
+  ta.value='';autoResize(ta);
+  document.getElementById('send-btn').disabled=true;
+  S.history.push({role:'user',content:text});save();addBubble('user',text);showTyping();
+  try{
+    const reply=S.provider==='gemini'?await callGemini():await callAnthropic();
+    remTyping();S.history.push({role:'assistant',content:reply});save();addBubble('ai',reply);
+    if(gc().analysis&&S.history.length>=6&&S.history.length%6===0)showAbadge();
+  }catch(e){remTyping();addBubble('ai','⚠ エラー: '+e.message);}
+  document.getElementById('send-btn').disabled=false;
+}
+
+async function callGemini(){
+  const sys=buildSys();
+  const contents=[];
+  if(sys)contents.push({role:'user',parts:[{text:'指示: '+sys}]},{role:'model',parts:[{text:'了解しました。'}]});
+  S.history.forEach(m=>contents.push({role:m.role==='user'?'user':'model',parts:[{text:m.content}]}));
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${S.geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:1024}})});
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.candidates[0].content.parts[0].text;
+}
+
+async function callAnthropic(){
+  const sys=buildSys();
+  const msgs=S.history.map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content}));
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,system:sys,messages:msgs})});
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.content[0].text;
+}
+
+function showAbadge(){
+  const box=document.getElementById('messages');
+  const wrap=document.createElement('div');wrap.className='abadge-wrap';
+  const badge=document.createElement('div');badge.className='abadge';badge.innerHTML='🔍 会話を解析してズレを確認';
+  badge.onclick=runAnalysis;wrap.appendChild(badge);box.appendChild(wrap);box.scrollTop=box.scrollHeight;
+}
+
+async function runAnalysis(){
+  if(!akey())return;
+  const body=document.getElementById('analysis-body');
+  body.innerHTML='<div style="color:var(--tx2);font-size:14px;padding:8px 0;">解析中…</div>';
+  openOv('ov-analysis');
+  try{
+    const snippet=S.history.slice(-14).map(m=>(m.role==='user'?'ユーザー':'AI')+': '+m.content).join('\n');
+    const prompt=`以下の会話を分析してください。AIの返答のズレ・矛盾・噛み合っていない箇所を日本語で具体的に指摘し、改善案を提案してください。\n\n会話:\n${snippet}`;
+    let result;
+    if(S.provider==='gemini'){
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${S.geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}]})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);
+      result=d.candidates[0].content.parts[0].text;
+    }else{
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,messages:[{role:'user',content:prompt}]})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);
+      result=d.content[0].text;
+    }
+    body.innerHTML='';
+    const pre=document.createElement('div');pre.style.cssText='font-size:14px;line-height:1.75;white-space:pre-wrap;color:var(--tx);';pre.textContent=result;
+    body.appendChild(pre);
+  }catch(e){body.innerHTML=`<div style="color:var(--dg);font-size:14px;">エラー: ${e.message}</div>`;}
+}
+
+function hkey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function clearChat(){if(!confirm('会話履歴を全て削除しますか？'))return;S.history=[];save();renderHistory();}
+
+function openSettings(){
+  document.getElementById('s-name').value=S.appName||'';
+  document.getElementById('s-prov').value=S.provider;
+  document.getElementById('s-gkey').value=S.geminiKey;
+  document.getElementById('s-akey').value=S.anthropicKey;
+  document.getElementById('s-uname').value=S.userName||'';
+  document.getElementById('s-ubio').value=S.userBio||'';
+  updProv();openOv('ov-settings');
+}
+function updProv(){
+  const p=document.getElementById('s-prov').value;
+  document.getElementById('gemini-wrap').style.display=p==='gemini'?'block':'none';
+  document.getElementById('anthropic-wrap').style.display=p==='anthropic'?'block':'none';
+}
+function saveSettings(){
+  S.appName=document.getElementById('s-name').value.trim()||'MY AI CHAT';
+  S.provider=document.getElementById('s-prov').value;
+  S.geminiKey=document.getElementById('s-gkey').value.trim();
+  S.anthropicKey=document.getElementById('s-akey').value.trim();
+  S.userName=document.getElementById('s-uname').value.trim();
+  S.userBio=document.getElementById('s-ubio').value.trim();
+  save();applyName();checkBanner();cls('ov-settings');
+}
+
+function openChars(){renderCharList();openOv('ov-chars');}
+function renderCharList(){
+  const list=document.getElementById('char-list');list.innerHTML='';
+  S.chars.forEach(c=>{
+    const item=document.createElement('div');item.className='cli';
+    const avhtml=c.avatarData?`<div class="cliav"><img src="${c.avatarData}"></div>`:`<div class="cliav"><span style="font-size:20px;">${c.emoji||'🤖'}</span></div>`;
+    item.innerHTML=`${avhtml}<div class="cliinfo"><strong>${c.name}</strong><span>${(c.prompt||'').substring(0,40)}…</span></div><button class="smb" onclick="showEditor('${c.id}')">編集</button>`;
+    list.appendChild(item);
+  });
+}
+
+function showEditor(id){
+  const c=id?S.chars.find(x=>x.id===id):null;
+  document.getElementById('et').textContent=c?'キャラクターを編集':'キャラクターを追加';
+  document.getElementById('ce-name').value=c?c.name:'';
+  document.getElementById('ce-emoji').value=c?c.emoji:'🤖';
+  document.getElementById('ce-prompt').value=c?c.prompt:'';
+  document.getElementById('ce-uov').value=c?(c.userOverride||''):'';
+  document.getElementById('ce-id').value=c?c.id:'';
+  document.getElementById('ce-avdata').value=c?c.avatarData:'';
+  document.getElementById('ce-analysis').checked=c?!!c.analysis:false;
+  document.getElementById('ce-del').style.display=c?'block':'none';
+  setAvPrev(c?c.avatarData:'',c?c.emoji:'🤖');
+  renderTones(c?c.tones||[]:[]);
+  openOv('ov-edit');
+}
+
+function setAvPrev(data,emoji){
+  const p=document.getElementById('avprev');
+  if(data){p.innerHTML=`<img src="${data}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;">`;}
+  else{p.innerHTML=emoji||'🤖';}
+}
+function onAvFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    document.getElementById('ce-avdata').value=ev.target.result;
+    setAvPrev(ev.target.result,'');
+  };
+  reader.readAsDataURL(file);
+}
+function clearAvImg(){
+  document.getElementById('ce-avdata').value='';
+  document.getElementById('avfile').value='';
+  setAvPrev('',document.getElementById('ce-emoji').value||'🤖');
+}
+function onEmojiInput(){
+  if(!document.getElementById('ce-avdata').value)
+    setAvPrev('',document.getElementById('ce-emoji').value||'🤖');
+}
+
+function renderTones(tones){
+  const list=document.getElementById('tone-list');list.innerHTML='';
+  tones.forEach((t,i)=>{
+    const row=document.createElement('div');row.className='tonerow';
+    row.innerHTML=`<input type="text" value="${t.replace(/"/g,'&quot;')}" placeholder="例: そうなんだ〜" data-ti="${i}"/><button class="tonedel" onclick="removeTone(${i})">×</button>`;
+    list.appendChild(row);
+  });
+}
+function addTone(){
+  const list=document.getElementById('tone-list');
+  const i=list.children.length;
+  const row=document.createElement('div');row.className='tonerow';
+  row.innerHTML=`<input type="text" placeholder="例: そうなんだ〜" data-ti="${i}"/><button class="tonedel" onclick="removeTone(${i})">×</button>`;
+  list.appendChild(row);
+}
+function removeTone(i){renderTones(getTones().filter((_,j)=>j!==i));}
+function getTones(){return[...document.querySelectorAll('#tone-list input[type=text]')].map(el=>el.value.trim()).filter(Boolean);}
+
+function saveChar(){
+  const id=document.getElementById('ce-id').value||'c'+Date.now();
+  const obj={
+    id,name:document.getElementById('ce-name').value.trim()||'キャラクター',
+    emoji:document.getElementById('ce-emoji').value.trim()||'🤖',
+    avatarData:document.getElementById('ce-avdata').value,
+    prompt:document.getElementById('ce-prompt').value.trim()||'あなたはAIアシスタントです。',
+    tones:getTones(),analysis:document.getElementById('ce-analysis').checked,
+    userOverride:document.getElementById('ce-uov').value.trim()
+  };
+  const idx=S.chars.findIndex(c=>c.id===id);
+  if(idx>=0)S.chars[idx]=obj;else S.chars.push(obj);
+  save();renderStrip();renderCharList();cls('ov-edit');
+}
+function deleteChar(){
+  const id=document.getElementById('ce-id').value;
+  if(S.chars.length<=1){alert('最低1つ必要です');return;}
+  if(!confirm('削除しますか？'))return;
+  S.chars=S.chars.filter(c=>c.id!==id);
+  if(S.activeCharId===id)S.activeCharId=S.chars[0].id;
+  save();renderStrip();renderCharList();cls('ov-edit');
+}
+
+function openOv(id){document.getElementById(id).classList.add('open');}
+function cls(id){document.getElementById(id).classList.remove('open');}
+function ovc(e,id){if(e.target.id===id)cls(id);}
+
+init();
+</script>
+</body>
+</html>
