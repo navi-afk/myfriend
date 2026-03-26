@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<<<<<<< HEAD
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -381,10 +382,534 @@ function renderCharList(){
     const item=document.createElement('div');item.className='cli';
     const avhtml=c.avatarData?`<div class="cliav"><img src="${c.avatarData}"></div>`:`<div class="cliav"><span style="font-size:20px;">${c.emoji||'🤖'}</span></div>`;
     item.innerHTML=`${avhtml}<div class="cliinfo"><strong>${c.name}</strong><span>${(c.prompt||'').substring(0,40)}…</span></div><button class="smb" onclick="showEditor('${c.id}')">編集</button>`;
+=======
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title>My AI Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --accent: #7c6af7;
+    --accent2: #a89ef8;
+    --text: #e8e8e8;
+    --text2: #888;
+    --text3: #555;
+    --user-bubble: #2a2560;
+    --ai-bubble: #1e1e1e;
+    --danger: #e05252;
+    --success: #52b788;
+    --radius: 16px;
+    --font-main: 'Noto Sans JP', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-main); font-size: 15px; }
+
+  /* ── APP SHELL ── */
+  #app { display: flex; flex-direction: column; height: 100dvh; }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0;
+  }
+  #topbar h1 { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--accent2); letter-spacing: 0.04em; flex: 1; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:active { background: var(--surface2); color: var(--text); }
+
+  /* ── CHARACTER STRIP ── */
+  #char-strip {
+    display: flex; gap: 8px; padding: 10px 16px;
+    overflow-x: auto; flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  #char-strip::-webkit-scrollbar { display: none; }
+  .char-chip {
+    flex-shrink: 0; padding: 6px 14px;
+    border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2); font-size: 13px;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .char-chip.active { border-color: var(--accent); background: rgba(124,106,247,0.15); color: var(--accent2); }
+  .char-chip.add-btn { border-style: dashed; font-size: 18px; padding: 4px 12px; }
+
+  /* ── MESSAGES ── */
+  #messages {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .msg { display: flex; gap: 10px; max-width: 88%; animation: fadeup 0.2s ease; }
+  @keyframes fadeup { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.ai { align-self: flex-start; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; border: 1px solid var(--border);
+  }
+  .avatar.ai-av { background: rgba(124,106,247,0.2); }
+  .avatar.user-av { background: rgba(82,183,136,0.2); font-size: 12px; font-family: var(--font-mono); color: var(--success); }
+  .bubble {
+    padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.65;
+    border: 1px solid transparent;
+  }
+  .msg.user .bubble { background: var(--user-bubble); border-color: rgba(124,106,247,0.3); border-bottom-right-radius: 4px; }
+  .msg.ai .bubble { background: var(--ai-bubble); border-color: var(--border); border-bottom-left-radius: 4px; }
+
+  .typing { display: flex; gap: 5px; padding: 4px 0; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--text3); font-size: 13px; text-align: center; padding: 32px;
+  }
+  .empty-state .big { font-size: 36px; }
+  .empty-state strong { color: var(--text2); font-weight: 500; }
+
+  /* ── INPUT BAR ── */
+  #inputbar {
+    display: flex; align-items: flex-end; gap: 8px;
+    padding: 10px 12px 10px; border-top: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0;
+  }
+  #inputbar textarea {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: var(--font-main); font-size: 14px;
+    padding: 10px 14px; resize: none; outline: none; max-height: 120px;
+    line-height: 1.5; transition: border-color 0.15s;
+  }
+  #inputbar textarea:focus { border-color: var(--accent); }
+  #inputbar textarea::placeholder { color: var(--text3); }
+  #send-btn {
+    width: 42px; height: 42px; border-radius: 12px; border: none;
+    background: var(--accent); color: #fff; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+  }
+  #send-btn:active { transform: scale(0.93); background: #6459d9; }
+  #send-btn:disabled { background: var(--surface2); cursor: default; }
+
+  /* ── NO API KEY BANNER ── */
+  #api-banner {
+    margin: 12px 16px; padding: 12px 14px; background: rgba(224,82,82,0.1);
+    border: 1px solid rgba(224,82,82,0.3); border-radius: 12px;
+    font-size: 13px; color: #f08080; display: none;
+  }
+  #api-banner a { color: #f08080; }
+  #api-banner button { float: right; background: none; border: none; color: #f08080; cursor: pointer; font-size: 16px; }
+
+  /* ── MODAL OVERLAY ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100;
+    display: none; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    width: 100%; max-width: 600px; max-height: 88dvh;
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    border: 1px solid var(--border); border-bottom: none;
+    overflow-y: auto; animation: slideup 0.25s ease;
+  }
+  @keyframes slideup { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 12px; border-bottom: 1px solid var(--border); sticky; top: 0;
+    background: var(--surface);
+  }
+  .sheet-header h2 { font-size: 16px; font-weight: 500; }
+  .sheet-close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; }
+  .sheet-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  label { font-size: 12px; color: var(--text2); letter-spacing: 0.04em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  input[type=text], input[type=password], textarea.sheet-ta {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: var(--font-main); font-size: 14px;
+    padding: 10px 14px; outline: none; transition: border-color 0.15s;
+  }
+  input[type=text]:focus, input[type=password]:focus, textarea.sheet-ta:focus { border-color: var(--accent); }
+  textarea.sheet-ta { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; padding: 12px; border-radius: 12px; border: none; font-size: 14px;
+    font-family: var(--font-main); cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--surface2); color: var(--text2); }
+  .btn-danger { background: rgba(224,82,82,0.15); color: var(--danger); border: 1px solid rgba(224,82,82,0.3); }
+  .char-list-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .char-list-item:last-child { border-bottom: none; }
+  .char-emoji { font-size: 24px; width: 40px; text-align: center; }
+  .char-info { flex: 1; }
+  .char-info strong { font-size: 14px; font-weight: 500; display: block; }
+  .char-info span { font-size: 12px; color: var(--text2); }
+  .char-actions { display: flex; gap: 6px; }
+  .small-btn {
+    padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text2); font-size: 12px; cursor: pointer;
+  }
+  .small-btn.del { border-color: rgba(224,82,82,0.3); color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <h1>MY AI CHAT</h1>
+    <button class="icon-btn" onclick="openSettings()" title="設定">⚙</button>
+    <button class="icon-btn" onclick="clearChat()" title="会話をクリア">🗑</button>
+    <button class="icon-btn" onclick="openChars()" title="キャラクター管理">🎭</button>
+  </div>
+
+  <!-- NO API KEY BANNER -->
+  <div id="api-banner">
+    <button onclick="this.parentElement.style.display='none'">×</button>
+    ⚠ APIキーが未設定です。<a href="#" onclick="openSettings();return false;">設定</a>から入力してください。
+  </div>
+
+  <!-- CHARACTER STRIP -->
+  <div id="char-strip"></div>
+
+  <!-- MESSAGES -->
+  <div id="messages">
+    <div class="empty-state" id="empty-state">
+      <div class="big">💬</div>
+      <strong>会話を始めよう</strong>
+      <div>下のテキストボックスに入力してください</div>
+    </div>
+  </div>
+
+  <!-- INPUT BAR -->
+  <div id="inputbar">
+    <textarea id="input-ta" rows="1" placeholder="メッセージを入力…" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+    <button id="send-btn" onclick="sendMessage()">↑</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settings-overlay" onclick="overlayClick(event,'settings-overlay')">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>⚙ 設定</h2>
+      <button class="sheet-close" onclick="closeOverlay('settings-overlay')">×</button>
+    </div>
+    <div class="sheet-body">
+      <div>
+        <label>Anthropic APIキー</label>
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;">
+          キーは端末内にのみ保存されます。<a href="https://console.anthropic.com/" style="color:var(--accent2);" target="_blank">取得はこちら →</a>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+        <button class="btn btn-ghost" onclick="closeOverlay('settings-overlay')">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHARACTER MANAGER MODAL -->
+<div class="overlay" id="chars-overlay" onclick="overlayClick(event,'chars-overlay')">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>🎭 キャラクター管理</h2>
+      <button class="sheet-close" onclick="closeOverlay('chars-overlay')">×</button>
+    </div>
+    <div class="sheet-body">
+      <div id="char-list"></div>
+      <button class="btn btn-primary" onclick="showCharEditor(null)">＋ 新しいキャラクターを追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHARACTER EDITOR MODAL -->
+<div class="overlay" id="charedit-overlay" onclick="overlayClick(event,'charedit-overlay')">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2 id="charedit-title">キャラクターを追加</h2>
+      <button class="sheet-close" onclick="closeOverlay('charedit-overlay')">×</button>
+    </div>
+    <div class="sheet-body">
+      <div>
+        <label>名前</label>
+        <input type="text" id="ce-name" placeholder="例: りん、先生、相棒…" />
+      </div>
+      <div>
+        <label>アイコン（絵文字1文字）</label>
+        <input type="text" id="ce-emoji" placeholder="🤖" maxlength="2" style="width:80px;" />
+      </div>
+      <div>
+        <label>システムプロンプト（AIへの指示）</label>
+        <textarea class="sheet-ta" id="ce-prompt" rows="6" placeholder="例: あなたは「りん」という名の親友です。関西弁でフレンドリーに話してください。ユーザーの話をよく聞き、共感しながら会話してください。"></textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;">AIの性格・口調・役割を自由に記述できます</div>
+      </div>
+      <input type="hidden" id="ce-id" />
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveChar()">保存</button>
+        <button class="btn btn-ghost" onclick="closeOverlay('charedit-overlay')">キャンセル</button>
+      </div>
+      <button class="btn btn-danger" id="ce-delete" onclick="deleteChar()" style="display:none;">このキャラクターを削除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+const DEFAULT_CHARS = [
+  { id: 'default', name: 'AI助手', emoji: '🤖', prompt: 'あなたは親切で知的なAIアシスタントです。日本語で自然に会話してください。' },
+  { id: 'friend', name: 'ともだち', emoji: '😊', prompt: 'あなたはユーザーの気さくな友人です。タメ口でフレンドリーに、時にユーモアを交えながら話してください。相手の話をよく聞き、共感してください。' },
+];
+
+let state = {
+  apiKey: '',
+  chars: [...DEFAULT_CHARS],
+  activeCharId: 'default',
+  history: [],  // {role, content}
+};
+
+// ── PERSISTENCE ──
+function save() {
+  localStorage.setItem('myaichat', JSON.stringify(state));
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('myaichat') || '{}');
+    if (d.apiKey) state.apiKey = d.apiKey;
+    if (d.chars && d.chars.length) state.chars = d.chars;
+    if (d.activeCharId) state.activeCharId = d.activeCharId;
+    if (d.history) state.history = d.history;
+  } catch(e) {}
+}
+
+// ── INIT ──
+function init() {
+  load();
+  renderCharStrip();
+  renderHistory();
+  checkApiBanner();
+}
+
+// ── API BANNER ──
+function checkApiBanner() {
+  document.getElementById('api-banner').style.display = state.apiKey ? 'none' : 'block';
+}
+
+// ── CHARACTER STRIP ──
+function renderCharStrip() {
+  const strip = document.getElementById('char-strip');
+  strip.innerHTML = '';
+  state.chars.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'char-chip' + (c.id === state.activeCharId ? ' active' : '');
+    chip.textContent = c.emoji + ' ' + c.name;
+    chip.onclick = () => selectChar(c.id);
+    strip.appendChild(chip);
+  });
+}
+
+function selectChar(id) {
+  state.activeCharId = id;
+  save();
+  renderCharStrip();
+}
+
+function getActiveChar() {
+  return state.chars.find(c => c.id === state.activeCharId) || state.chars[0];
+}
+
+// ── MESSAGE RENDERING ──
+function renderHistory() {
+  const container = document.getElementById('messages');
+  const empty = document.getElementById('empty-state');
+  if (state.history.length === 0) {
+    empty.style.display = 'flex';
+    // remove old bubbles
+    [...container.querySelectorAll('.msg')].forEach(el => el.remove());
+    return;
+  }
+  empty.style.display = 'none';
+  [...container.querySelectorAll('.msg')].forEach(el => el.remove());
+  state.history.forEach(m => appendBubble(m.role, m.content));
+}
+
+function appendBubble(role, text) {
+  const container = document.getElementById('messages');
+  document.getElementById('empty-state').style.display = 'none';
+
+  const char = getActiveChar();
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+
+  const av = document.createElement('div');
+  if (role === 'user') {
+    av.className = 'avatar user-av';
+    av.textContent = 'ME';
+  } else {
+    av.className = 'avatar ai-av';
+    av.textContent = char.emoji;
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  div.appendChild(av);
+  div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const container = document.getElementById('messages');
+  const char = getActiveChar();
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typing-indicator';
+
+  const av = document.createElement('div');
+  av.className = 'avatar ai-av';
+  av.textContent = char.emoji;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+  div.appendChild(av); div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+// ── SEND MESSAGE ──
+async function sendMessage() {
+  const ta = document.getElementById('input-ta');
+  const text = ta.value.trim();
+  if (!text) return;
+  if (!state.apiKey) { openSettings(); return; }
+
+  ta.value = ''; autoResize(ta);
+  document.getElementById('send-btn').disabled = true;
+
+  state.history.push({ role: 'user', content: text });
+  save();
+  appendBubble('user', text);
+  showTyping();
+
+  try {
+    const char = getActiveChar();
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: char.prompt,
+        messages: state.history,
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const reply = data.content[0].text;
+    state.history.push({ role: 'assistant', content: reply });
+    save();
+    appendBubble('ai', reply);
+
+  } catch(e) {
+    removeTyping();
+    appendBubble('ai', '⚠ エラーが発生しました: ' + e.message);
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function clearChat() {
+  if (!confirm('会話履歴を全て削除しますか？')) return;
+  state.history = [];
+  save();
+  renderHistory();
+}
+
+// ── SETTINGS ──
+function openSettings() {
+  document.getElementById('api-key-input').value = state.apiKey;
+  openOverlay('settings-overlay');
+}
+function saveSettings() {
+  state.apiKey = document.getElementById('api-key-input').value.trim();
+  save(); closeOverlay('settings-overlay'); checkApiBanner();
+}
+
+// ── CHARACTER MANAGER ──
+function openChars() {
+  renderCharList();
+  openOverlay('chars-overlay');
+}
+function renderCharList() {
+  const list = document.getElementById('char-list');
+  list.innerHTML = '';
+  state.chars.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'char-list-item';
+    item.innerHTML = `
+      <div class="char-emoji">${c.emoji}</div>
+      <div class="char-info">
+        <strong>${c.name}</strong>
+        <span>${c.prompt.substring(0,40)}…</span>
+      </div>
+      <div class="char-actions">
+        <button class="small-btn" onclick="showCharEditor('${c.id}')">編集</button>
+      </div>`;
+>>>>>>> 96a1767d2929141b85b67e21849a12241fd643df
     list.appendChild(item);
   });
 }
 
+<<<<<<< HEAD
 function showEditor(id){
   const c=id?S.chars.find(x=>x.id===id):null;
   document.getElementById('et').textContent=c?'キャラクターを編集':'キャラクターを追加';
@@ -470,6 +995,49 @@ function openOv(id){document.getElementById(id).classList.add('open');}
 function cls(id){document.getElementById(id).classList.remove('open');}
 function ovc(e,id){if(e.target.id===id)cls(id);}
 
+=======
+function showCharEditor(id) {
+  const char = id ? state.chars.find(c => c.id === id) : null;
+  document.getElementById('charedit-title').textContent = char ? 'キャラクターを編集' : 'キャラクターを追加';
+  document.getElementById('ce-name').value = char ? char.name : '';
+  document.getElementById('ce-emoji').value = char ? char.emoji : '🤖';
+  document.getElementById('ce-prompt').value = char ? char.prompt : '';
+  document.getElementById('ce-id').value = char ? char.id : '';
+  document.getElementById('ce-delete').style.display = char ? 'block' : 'none';
+  openOverlay('charedit-overlay');
+}
+
+function saveChar() {
+  const id = document.getElementById('ce-id').value || 'char_' + Date.now();
+  const name = document.getElementById('ce-name').value.trim() || 'キャラクター';
+  const emoji = document.getElementById('ce-emoji').value.trim() || '🤖';
+  const prompt = document.getElementById('ce-prompt').value.trim() || 'あなたはAIアシスタントです。';
+
+  const existing = state.chars.findIndex(c => c.id === id);
+  if (existing >= 0) {
+    state.chars[existing] = { id, name, emoji, prompt };
+  } else {
+    state.chars.push({ id, name, emoji, prompt });
+  }
+  save(); renderCharStrip(); renderCharList(); closeOverlay('charedit-overlay');
+}
+
+function deleteChar() {
+  const id = document.getElementById('ce-id').value;
+  if (state.chars.length <= 1) { alert('最低1つのキャラクターが必要です'); return; }
+  if (!confirm('このキャラクターを削除しますか？')) return;
+  state.chars = state.chars.filter(c => c.id !== id);
+  if (state.activeCharId === id) state.activeCharId = state.chars[0].id;
+  save(); renderCharStrip(); renderCharList(); closeOverlay('charedit-overlay');
+}
+
+// ── OVERLAY HELPERS ──
+function openOverlay(id) { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+function overlayClick(e, id) { if (e.target.id === id) closeOverlay(id); }
+
+// ── START ──
+>>>>>>> 96a1767d2929141b85b67e21849a12241fd643df
 init();
 </script>
 </body>
